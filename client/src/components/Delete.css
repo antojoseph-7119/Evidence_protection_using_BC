@@ -1,0 +1,182 @@
+/* Delete Account Page Styles */
+
+/* Base styles */
+.delete-account-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #fafafa;
+    padding: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  
+  .delete-card {
+    width: 100%;
+    max-width: 430px;
+    background-color: #ffffff;
+    border: 1px solid #dbdbdb;
+    border-radius: 3px;
+    padding: 40px 30px;
+  }
+  
+  .delete-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+  
+  .delete-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: #262626;
+    margin-bottom: 8px;
+    text-align: center;
+  }
+  
+  .delete-subtitle {
+    font-size: 14px;
+    color: #8e8e8e;
+    text-align: center;
+  }
+  
+  /* Warning message */
+  .warning-box {
+    background-color: #ffefef;
+    border-left: 4px solid #ed4956;
+    padding: 16px;
+    margin-bottom: 24px;
+  }
+  
+  .warning-text {
+    font-size: 14px;
+    color: #ed4956;
+    line-height: 1.5;
+  }
+  
+  /* Form elements */
+  .form-group {
+    margin-bottom: 16px;
+  }
+  
+  .form-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #262626;
+    margin-bottom: 8px;
+  }
+  
+  .form-input {
+    width: 100%;
+    padding: 9px 8px;
+    background-color: #fafafa;
+    border: 1px solid #dbdbdb;
+    border-radius: 3px;
+    color: #262626;
+    font-size: 14px;
+  }
+  
+  .form-input:focus {
+    outline: none;
+    border-color: #a8a8a8;
+  }
+  
+  .form-select {
+    width: 100%;
+    padding: 9px 8px;
+    background-color: #fafafa;
+    border: 1px solid #dbdbdb;
+    border-radius: 3px;
+    color: #262626;
+    font-size: 14px;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'%3E%3Cpath fill='%238e8e8e' d='M7 10l5 5 5-5H7z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+  }
+  
+  /* Checkbox */
+  .checkbox-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+  
+  .checkbox-input {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+  }
+  
+  .checkbox-label {
+    font-size: 14px;
+    color: #262626;
+  }
+  
+  /* Error message */
+  .error-message {
+    color: #ed4956;
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+  
+  /* Buttons */
+  .button-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .delete-button {
+    width: 100%;
+    background-color: #ed4956;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 9px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .delete-button:hover {
+    background-color: #c62330;
+  }
+  
+  .delete-button:disabled {
+    background-color: #f08a93;
+    cursor: not-allowed;
+  }
+  
+  .cancel-button {
+    width: 100%;
+    background-color: #efefef;
+    color: #262626;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 9px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .cancel-button:hover {
+    background-color: #dbdbdb;
+  }
+  
+  /* Mobile responsiveness */
+  @media (max-width: 480px) {
+    .delete-card {
+      padding: 20px;
+    }
+    
+    .delete-title {
+      font-size: 18px;
+    }
+  }
