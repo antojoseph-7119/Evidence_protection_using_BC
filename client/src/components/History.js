@@ -601,15 +601,7 @@ const History = () => {
             
             {renderTabBar()}
           </div>
-          
-          <p style={{
-            color: "#64748B",
-            fontSize: "1rem",
-            maxWidth: "800px",
-            marginTop: "0.5rem",
-          }}>
-            Track all your document uploads and verification results in one place.
-          </p>
+         
         </div>
 
         {activeTab === "all" ? (

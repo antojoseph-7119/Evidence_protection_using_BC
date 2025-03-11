@@ -29,6 +29,7 @@ const LoginPage = () => {
         localStorage.setItem("userEmail", data.email);
         localStorage.setItem("loginTime", Date.now().toString());
         navigate("/upload");
+        window.history.replaceState(null, "", "/upload");
         setTimeout(() => {
           window.location.reload();
         }, 500);

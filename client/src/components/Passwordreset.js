@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, ArrowLeft, Mail, Key, Lock, ShieldCheck } from 'lucide-react';
+import { Shield, ArrowLeft, Mail, Key, Lock, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 
 const ForgotPasswordPage = () => {
   const [email, setEmail] = useState('');
@@ -9,8 +9,26 @@ const ForgotPasswordPage = () => {
   const [step, setStep] = useState(1); // 1: Email, 2: OTP, 3: New Password
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
+
+  // Password requirements
+  const passwordRequirements = {
+    minLength: newPassword.length >= 8,
+    hasUppercase: /[A-Z]/.test(newPassword),
+    hasLowercase: /[a-z]/.test(newPassword),
+    hasNumber: /\d/.test(newPassword),
+    hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(newPassword),
+  };
+
+  const requirements = [
+    { id: 'minLength', text: 'At least 8 characters', met: passwordRequirements.minLength },
+    { id: 'hasUppercase', text: 'At least one uppercase letter', met: passwordRequirements.hasUppercase },
+    { id: 'hasLowercase', text: 'At least one lowercase letter', met: passwordRequirements.hasLowercase },
+    { id: 'hasNumber', text: 'At least one number', met: passwordRequirements.hasNumber },
+    { id: 'hasSpecialChar', text: 'At least one special character', met: passwordRequirements.hasSpecialChar },
+  ];
 
   const handleSubmitEmail = async (e) => {
     e.preventDefault();
@@ -69,25 +87,32 @@ const ForgotPasswordPage = () => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
-  
-    console.log('Email:', email);       // ✅ Check if email is correctly set
-    console.log('New Password:', newPassword);  // ✅ Check if password is correctly set
-  
+
+    console.log('Email:', email); // ✅ Check if email is correctly set
+    console.log('New Password:', newPassword); // ✅ Check if password is correctly set
+
     if (!email || !newPassword) {
       setError('Please provide both email and password.');
       setIsLoading(false);
       return;
     }
-  
+
+    // Check if all password requirements are met
+    if (!Object.values(passwordRequirements).every((req) => req)) {
+      setError('Password does not meet all requirements.');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch('http://localhost:5000/set-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password: newPassword }),
       });
-  
+
       const data = await response.json();
-  
+
       if (response.ok) {
         navigate('/login');
       } else {
@@ -99,8 +124,6 @@ const ForgotPasswordPage = () => {
       setIsLoading(false);
     }
   };
-  
-  
 
   return (
     <>
@@ -266,6 +289,27 @@ const ForgotPasswordPage = () => {
           margin-bottom: 1.5rem;
         }
 
+        .password-requirements {
+          margin-top: 0.5rem;
+          font-size: 0.875rem;
+          color: #6B7280;
+        }
+
+        .password-requirements div {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          margin-bottom: 0.25rem;
+        }
+
+        .password-requirements span {
+          color: #EF4444;
+        }
+
+        .password-requirements span.met {
+          color: #10B981;
+        }
+
         /* Animation for the icon */
         @keyframes pulse {
           0% { transform: scale(1); }
@@ -377,17 +421,35 @@ const ForgotPasswordPage = () => {
                 <div className="input-group">
                   <Lock size={20} className="icon" />
                   <input
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     placeholder="New Password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     required
                   />
+                  <div
+                    style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', color: '#2563EB', opacity: 0.7 }}
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </div>
                 </div>
+
+                <div className="password-requirements">
+                  {requirements.map((req) => (
+                    <div key={req.id}>
+                      <span className={req.met ? 'met' : ''}>
+                        {req.met ? '✓' : '✗'}
+                      </span>
+                      <span className={req.met ? 'met' : ''}>{req.text}</span>
+                    </div>
+                  ))}
+                </div>
+
                 <button 
                   type="submit" 
                   className="reset-btn"
-                  disabled={isLoading}
+                  disabled={isLoading || !Object.values(passwordRequirements).every((req) => req)}
                 >
                   {isLoading ? 'Updating Password...' : 'Update Password'}
                 </button>

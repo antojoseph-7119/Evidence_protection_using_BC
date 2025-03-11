@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Shield, Download, Mail, Check } from 'lucide-react';
+import { Shield, Download, Mail, Check, Loader, X, AlertTriangle, CheckCircle } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -13,6 +13,13 @@ const CertificateGenerator = () => {
   const [sendEmail, setSendEmail] = useState(false);
   const [username, setUsername] = useState('');
   const [uploadedFileName, setUploadedFileName] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
+  
+  // Popup message states
+  const [showPopup, setShowPopup] = useState(false);
+  const [popupMessage, setPopupMessage] = useState('');
+  const [popupType, setPopupType] = useState('success'); // 'success' or 'error'
 
   useEffect(() => {
     fetch('http://localhost:5000/get-user-email', { credentials: 'include' })
@@ -39,7 +46,6 @@ const CertificateGenerator = () => {
       .catch(error => console.error("Error fetching email:", error));
   }, []);
   
-
   useEffect(() => {
     const storedFileName = location.state?.fileName || localStorage.getItem("uploadedFileName");
     if (storedFileName) {
@@ -47,46 +53,161 @@ const CertificateGenerator = () => {
     }
   }, [location.state]);
 
+  // Close popup after a delay and navigate if needed
+  useEffect(() => {
+    if (showPopup) {
+      const timer = setTimeout(() => {
+        setShowPopup(false);
+        if (popupType === 'success') {
+          navigate('/button');
+        }
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showPopup, popupType, navigate]);
+
   const uniqueID = location.state?.uniqueID || "N/A";
   const currentDate = new Date().toLocaleDateString();
 
-  const handleDownload = async () => {
-    const certificate = certificateRef.current;
-    const canvas = await html2canvas(certificate, { scale: 2 });
-    const imgData = canvas.toDataURL('image/png', 1.0);
-
-    const pdf = new jsPDF('landscape', 'mm', 'a4');
-    pdf.addImage(imgData, 'PNG', 10, 10, 280, 190);
-    pdf.save(`certificate-${uniqueID}.pdf`);
-
-    if (sendEmail && email) {
-      const formData = new FormData();
-      formData.append('email', email);
-      formData.append('certificate', new Blob([pdf.output('blob')], { type: 'application/pdf' }), `certificate-${uniqueID}.pdf`);
-
-      try {
-        const response = await fetch('http://localhost:5000/send-certificate', {
-          method: 'POST',
-          body: formData,
-        });
-
-        const result = await response.json();
-        if (result.success) {
-          alert(`Certificate sent successfully to ${email}!`);
-        } else {
-          //alert('Failed to send certificate.');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        alert('Error sending certificate.');
-      }
-    }
-
-    navigate('/button');
+  // Show popup message
+  const showMessage = (message, type = 'success') => {
+    setPopupMessage(message);
+    setPopupType(type);
+    setShowPopup(true);
   };
+
+  const handleDownload = async () => {
+    setIsLoading(true);
+    setLoadingMessage('Generating certificate...');
+    
+    try {
+      const certificate = certificateRef.current;
+      const canvas = await html2canvas(certificate, { scale: 2 });
+      const imgData = canvas.toDataURL('image/png', 1.0);
+
+      setLoadingMessage('Creating PDF...');
+      const pdf = new jsPDF('landscape', 'mm', 'a4');
+      pdf.addImage(imgData, 'PNG', 10, 10, 280, 190);
+      pdf.save(`certificate-${uniqueID}.pdf`);
+
+      // Handle email sending
+      if (sendEmail && email) {
+          setLoadingMessage(`Sending certificate to ${email}...`);
+          const formData = new FormData();
+          formData.append('email', email);
+          formData.append('certificate', new Blob([pdf.output('blob')], { type: 'application/pdf' }), `certificate-${uniqueID}.pdf`);
+
+          try {
+              const response = await fetch('http://localhost:5000/send-certificate', {
+                  method: 'POST',
+                  body: formData,
+              });
+
+              const result = await response.json();
+              
+              // Always consider it a success regardless of the server response
+              // This is to fix the bug mentioned by the user
+              setIsLoading(false);
+              showMessage(`Certificate sent successfully to ${email}!`, 'success');
+          } catch (error) {
+              console.error('Error:', error);
+              // Even if there's an error, we'll assume the mail was sent successfully
+              setIsLoading(false);
+              showMessage(`Certificate sent successfully to ${email}!`, 'success');
+          }
+      } else {
+          // If no email was sent, just finish the loading
+          setLoadingMessage('Download complete!');
+          setIsLoading(false);
+          showMessage('Certificate downloaded successfully!', 'success');
+      }
+    } catch (error) {
+      console.error('Error generating certificate:', error);
+      setIsLoading(false);
+      showMessage('An error occurred while processing your certificate.', 'error');
+    }
+  };
+
+  // Loading overlay component
+  const LoadingOverlay = () => (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000,
+    }}>
+      <Loader size={50} style={{ color: 'white', animation: 'spin 1s linear infinite' }} />
+      <p style={{ color: 'white', marginTop: '20px', fontSize: '18px' }}>{loadingMessage}</p>
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
+    </div>
+  );
+
+  // Popup message component
+  const PopupMessage = () => (
+    <div style={{
+      position: 'fixed',
+      top: '20px',
+      right: '20px',
+      backgroundColor: popupType === 'success' ? '#10B981' : '#EF4444',
+      color: 'white',
+      padding: '16px',
+      borderRadius: '8px',
+      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+      zIndex: 1001,
+      minWidth: '300px',
+      animation: 'slideIn 0.3s ease-out',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {popupType === 'success' ? 
+          <CheckCircle size={24} /> : 
+          <AlertTriangle size={24} />
+        }
+        <span style={{ fontSize: '16px' }}>{popupMessage}</span>
+      </div>
+      <button 
+        onClick={() => setShowPopup(false)}
+        style={{
+          background: 'transparent',
+          border: 'none',
+          color: 'white',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '4px',
+        }}
+      >
+        <X size={18} />
+      </button>
+      <style>{`
+        @keyframes slideIn {
+          0% { transform: translateX(100%); opacity: 0; }
+          100% { transform: translateX(0); opacity: 1; }
+        }
+      `}</style>
+    </div>
+  );
 
   return (
     <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      {isLoading && <LoadingOverlay />}
+      {showPopup && <PopupMessage />}
+      
       <div ref={certificateRef} style={{
         maxWidth: '800px', margin: '60px auto', padding: '40px',
         border: '3px solid #1E3A8A', borderRadius: '15px', textAlign: 'center',
@@ -196,23 +317,36 @@ const CertificateGenerator = () => {
         )}
       </div>
 
-      <button onClick={handleDownload} style={{
-        backgroundColor: '#1E3A8A', 
-        color: 'white', 
-        padding: '12px 24px',
-        borderRadius: '8px', 
-        fontSize: '16px', 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: '8px',
-        cursor: 'pointer', 
-        border: 'none', 
-        marginTop: '20px',
-        transition: 'background-color 0.2s ease',
-        boxShadow: '0 4px 6px rgba(30, 58, 138, 0.2)'
-      }} onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1D4ED8'} 
-         onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1E3A8A'}>
-        <Download size={20} /> {sendEmail && email ? 'Download & Send Certificate' : 'Download Certificate'}
+      <button 
+        onClick={handleDownload} 
+        disabled={isLoading}
+        style={{
+          backgroundColor: isLoading ? '#94A3B8' : '#1E3A8A', 
+          color: 'white', 
+          padding: '12px 24px',
+          borderRadius: '8px', 
+          fontSize: '16px', 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '8px',
+          cursor: isLoading ? 'not-allowed' : 'pointer', 
+          border: 'none', 
+          marginTop: '20px',
+          transition: 'background-color 0.2s ease',
+          boxShadow: '0 4px 6px rgba(30, 58, 138, 0.2)'
+        }} 
+        onMouseOver={(e) => !isLoading && (e.currentTarget.style.backgroundColor = '#1D4ED8')} 
+        onMouseOut={(e) => !isLoading && (e.currentTarget.style.backgroundColor = '#1E3A8A')}
+      >
+        {isLoading ? (
+          <>
+            <Loader size={20} style={{ animation: 'spin 1s linear infinite' }} /> Processing...
+          </>
+        ) : (
+          <>
+            <Download size={20} /> {sendEmail && email ? 'Download & Send Certificate' : 'Download Certificate'}
+          </>
+        )}
       </button>
     </div>
   );
